@@ -15,9 +15,7 @@
 
 ## 📺 Demo
 
-<video src="media/demo.MP4" width="100%" controls>
-  Your browser does not support the video tag.
-</video>
+![App Icon](media/logoCovi.png)
 
 ## 🌟 About This Project
 
@@ -103,6 +101,12 @@ python3 main.py
 - Search through history
 - Export functionality
 - Automatic history management
+
+## 🎥 Video Demo
+
+<video src="media/demo.MP4" width="100%" controls>
+  Your browser does not support the video tag.
+</video>
 
 ## 🤝 Contributing
 
