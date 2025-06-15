@@ -1,0 +1,23 @@
+# Core MLX dependencies
+mlx>=0.0.8
+mlx-whisper>=0.2.0
+mlx-lm>=0.0.8
+
+# Audio processing
+numpy>=1.21.0
+sounddevice>=0.4.6
+PyAudio>=0.2.13
+
+# Language processing
+langdetect>=1.0.9
+transformers>=4.36.0
+tokenizers>=0.15.0
+
+# UI and system
+tkinter  # Usually comes with Python
+pillow>=10.0.0  # For image processing in UI
+
+# Network and utilities
+requests>=2.25.1
+huggingface-hub>=0.17.0
+tqdm>=4.65.0  # For progress bars 
