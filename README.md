@@ -13,6 +13,12 @@
 
 </div>
 
+## 📺 Demo
+
+<video src="media/demo.MP4" width="100%" controls>
+  Your browser does not support the video tag.
+</video>
+
 ## 🌟 About This Project
 
 Online-Translator is the first in a series of open-source AI projects designed to democratize artificial intelligence and make it accessible to everyone. This project represents our commitment to:
