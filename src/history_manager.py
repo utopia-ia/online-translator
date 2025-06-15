@@ -7,7 +7,7 @@ History Manager Module
 Manages transcription and translation history for the Online-Translator application.
 Handles storage, retrieval, and export of historical data.
 
-Copyright (c) 2024 Kiko Cisneros
+Copyright (c) 2025 Kiko Cisneros
 Licensed under the MIT License (see LICENSE file for details)
 """
 

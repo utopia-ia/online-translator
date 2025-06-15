@@ -7,7 +7,7 @@ Lightweight LLM Module
 Provides lightweight language model functionality for semantic validation
 and text processing in the Online-Translator application.
 
-Copyright (c) 2024 Kiko Cisneros
+Copyright (c) 2025 Kiko Cisneros
 Licensed under the MIT License (see LICENSE file for details)
 """
 

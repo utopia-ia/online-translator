@@ -7,7 +7,7 @@ Configuration Module
 Configuration settings and constants for the Online-Translator application.
 Includes paths, model settings, and application parameters.
 
-Copyright (c) 2024 Kiko Cisneros
+Copyright (c) 2025 Kiko Cisneros
 Licensed under the MIT License (see LICENSE file for details)
 """
 

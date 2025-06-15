@@ -7,7 +7,7 @@ Audio Transcription Module
 Handles audio capture, processing, and transcription using the Whisper model
 via MLX. Manages real-time audio streaming and transcription.
 
-Copyright (c) 2024 Kiko Cisneros
+Copyright (c) 2025 Kiko Cisneros
 Licensed under the MIT License (see LICENSE file for details)
 """
 
@@ -126,6 +126,7 @@ class RealTimeTranscriber:
         
         print("🚀 Enhanced real-time transcriber initialized and ready")
     
+
     def _process_transcribed_text(self, new_text):
         """Enhanced text processing with improved concatenation logic"""
         with self.text_lock:
@@ -196,6 +197,7 @@ class RealTimeTranscriber:
                 if final_text != self.accumulated_text:
                     print(f"✂️ Removed 'thanks' at end: '{self.accumulated_text}' -> '{final_text}'")
                     self.accumulated_text = final_text
+                
                 
                 if self.accumulated_text.strip():
                     print(f"✅ Forced processing: {self.accumulated_text}")
@@ -303,12 +305,22 @@ class RealTimeTranscriber:
         initial_min_duration = 0.8  # ✅ BALANCED: Better first chunk for quality
         
         # Enhanced silence detection
-        silence_threshold = 0.003   # ✅ OPTIMIZED: Slightly higher threshold
-        silence_duration_threshold = 0.5  # ✅ ENHANCED: Longer for better pause detection
+        silence_threshold = 0.01   # ✅ RELAXED: Higher threshold to capture more audio
+        silence_duration_threshold = 0.4  # ✅ RELAXED: Longer silence needed
+        end_of_sentence_silence = 0.8  # ✅ RELAXED: Longer silence for end of sentence
         is_silence_mode = False  
         silence_start_time = 0  
-        buffer_overlap = 0.15  # ✅ ENHANCED: Longer overlap for better word continuity
+        buffer_overlap = 0.2  # ✅ RELAXED: Balanced overlap
         small_buffer = np.array([], dtype=np.float32)  
+        
+        # Word boundary detection
+        word_boundary_threshold = 0.005  # ✅ RELAXED: Higher threshold
+        min_word_duration = 0.08  # ✅ RELAXED: Shorter minimum word duration
+        word_boundary_buffer = 0.1  # ✅ RELAXED: More buffer around words
+        
+        # End of sentence detection
+        end_of_sentence_detected = False
+        end_of_sentence_start_time = 0
         
         while self.processing_active and not self._shutdown_requested:
             try:
@@ -356,13 +368,37 @@ class RealTimeTranscriber:
                         time.sleep(0.1)
                         continue
                 
-                # Enhanced silence detection
+                # Enhanced silence detection with word boundary awareness
                 is_silence = audio_rms < silence_threshold
+                is_word_boundary = silence_threshold > audio_rms > word_boundary_threshold
                 
-                if not is_silence_mode and is_silence:
+                # ✅ ENHANCED: End of sentence detection
+                if is_silence and not end_of_sentence_detected:
+                    if end_of_sentence_start_time == 0:
+                        end_of_sentence_start_time = current_time
+                    elif current_time - end_of_sentence_start_time >= end_of_sentence_silence:
+                        end_of_sentence_detected = True
+                        print(f"🔚 End of sentence detected ({audio_rms:.4f}) - processing final chunk")
+                        # Process the accumulated audio as a complete sentence
+                        if len(new_audio) > 0:
+                            transcribed_text = self._transcribe_audio_chunk(new_audio)
+                            self._process_transcribed_text(transcribed_text)
+                            last_transcription_time = current_time
+                            end_of_sentence_detected = False
+                            end_of_sentence_start_time = 0
+                            continue
+                elif not is_silence:
+                    end_of_sentence_detected = False
+                    end_of_sentence_start_time = 0
+                
+                if not is_silence_mode and (is_silence or is_word_boundary):
                     if silence_start_time == 0:
                         silence_start_time = current_time
-                        small_buffer = new_audio[-int(buffer_overlap * self.sample_rate):]
+                        # Keep more context for word boundaries
+                        if is_word_boundary:
+                            small_buffer = new_audio[-int((buffer_overlap + word_boundary_buffer) * self.sample_rate):]
+                        else:
+                            small_buffer = new_audio[-int(buffer_overlap * self.sample_rate):]
                     elif current_time - silence_start_time >= silence_duration_threshold:
                         is_silence_mode = True
                         print(f"🔇 Enhanced silence detected ({audio_rms:.4f}) - pausing active transcription")
@@ -373,11 +409,20 @@ class RealTimeTranscriber:
                     print(f"🔊 Sound detected ({audio_rms:.4f}) - resuming enhanced transcription")
                     
                     if len(small_buffer) > 0:
-                        new_audio = np.concatenate([small_buffer, new_audio])
-                        small_buffer = np.array([], dtype=np.float32)
+                        # Add extra context for word boundaries
+                        if is_word_boundary:
+                            new_audio = np.concatenate([small_buffer, new_audio])
+                            small_buffer = np.array([], dtype=np.float32)
+                        else:
+                            new_audio = np.concatenate([small_buffer, new_audio])
+                            small_buffer = np.array([], dtype=np.float32)
                 
                 if not is_silence_mode and not is_silence:
-                    small_buffer = new_audio[-int(buffer_overlap * self.sample_rate):]
+                    # Keep more context for word boundaries
+                    if is_word_boundary:
+                        small_buffer = new_audio[-int((buffer_overlap + word_boundary_buffer) * self.sample_rate):]
+                    else:
+                        small_buffer = new_audio[-int(buffer_overlap * self.sample_rate):]
                 
                 # Enhanced decision logic for processing
                 should_transcribe = False
@@ -421,6 +466,30 @@ class RealTimeTranscriber:
                 print(f"❌ Enhanced transcription worker error: {e}")
                 time.sleep(0.5)
     
+    def _validate_transcription_length(self, text, audio_duration):
+        """Validate if the transcription length is reasonable for the audio duration"""
+        if not text:
+            return True
+            
+        # Average speaking rate (words per minute)
+        avg_words_per_minute = 150  # Typical speaking rate
+        max_words_per_minute = 350  # ✅ RELAXED: Higher maximum rate
+        
+        # Calculate expected word count based on audio duration
+        expected_words = (audio_duration / 60) * avg_words_per_minute
+        max_expected_words = (audio_duration / 60) * max_words_per_minute
+        
+        # Count actual words in transcription
+        actual_words = len(text.split())
+        
+        # If actual words are significantly more than expected, it's suspicious
+        if actual_words > max_expected_words * 1.5:  # ✅ RELAXED: Allow 50% margin
+            print(f"⚠️  Suspicious transcription length: {actual_words} words for {audio_duration:.1f}s audio")
+            print(f"   Expected max: {max_expected_words:.1f} words, got {actual_words}")
+            return False
+            
+        return True
+
     def _transcribe_audio_chunk(self, audio_data):
         """Enhanced audio transcription with better validation"""
         if len(audio_data) < self.sample_rate * 0.6:  # Increased minimum duration
@@ -428,6 +497,7 @@ class RealTimeTranscriber:
         
         try:
             start_time = time.time()
+            audio_duration = len(audio_data) / self.sample_rate
             
             # ✅ ENHANCED: Better audio validation
             if not np.isfinite(audio_data).all():
@@ -443,7 +513,7 @@ class RealTimeTranscriber:
             except (OverflowError, RuntimeWarning):
                 audio_rms = 0.0
             
-            print(f"🎵 Enhanced processing: {len(audio_data)/self.sample_rate:.1f}s, RMS: {audio_rms:.4f}")
+            print(f"🎵 Enhanced processing: {audio_duration:.1f}s, RMS: {audio_rms:.4f}")
             
             # ✅ ENHANCED: More permissive threshold for quiet audio
             if audio_rms < 0.0008:  # Slightly higher but still permissive
@@ -459,14 +529,37 @@ class RealTimeTranscriber:
                 audio_data,
                 path_or_hf_repo=f"mlx-community/whisper-{self.whisper_model_name}-mlx",
                 language=None,  # Auto-detect
-                word_timestamps=False,
-                no_speech_threshold=0.5,  # ✅ ENHANCED: More balanced
-                logprob_threshold=-1.2,   # ✅ ENHANCED: Better quality balance
-                compression_ratio_threshold=2.8,  # ✅ ENHANCED: Better repetition detection
-                condition_on_previous_text=True  # Better context
+                word_timestamps=True,  # Enable word timestamps for better word boundary detection
+                no_speech_threshold=0.6,  # ✅ RELAXED: Less sensitive to speech
+                logprob_threshold=-1.2,   # ✅ RELAXED: More permissive quality threshold
+                compression_ratio_threshold=2.8,  # ✅ RELAXED: More permissive repetition detection
+                condition_on_previous_text=True,  # Better context
+                initial_prompt="This is a transcription of speech. Please transcribe accurately."  # Help with context
             )
             
             text = result.get("text", "").strip()
+            
+            # ✅ IMMEDIATE FILTER: Remove CastingWords signature as soon as we get the text
+            text = text.replace("Transcription by CastingWords", "").strip()
+            
+            # ✅ ENHANCED: Validate transcription length against audio duration
+            if not self._validate_transcription_length(text, audio_duration):
+                print("🚫 Rejecting transcription due to suspicious length")
+                return ""
+            
+            # ✅ ENHANCED: Better word boundary handling
+            if result.get("words"):
+                words = result["words"]
+                if len(words) > 0:
+                    # Check if first word is likely incomplete
+                    first_word = words[0]
+                    if first_word.get("start", 0) < 0.1:  # Word starts very early
+                        text = text[text.find(" ") + 1:] if " " in text else ""
+                    
+                    # Check if last word is likely incomplete
+                    last_word = words[-1]
+                    if last_word.get("end", 0) > len(audio_data)/self.sample_rate - 0.1:  # Word ends very late
+                        text = text.rsplit(" ", 1)[0] if " " in text else ""
             
             # ✅ ENHANCED: Better corruption detection
             if self._is_corrupted_transcription_enhanced(text):
@@ -480,11 +573,10 @@ class RealTimeTranscriber:
             
             if text:
                 avg_time = sum(self.transcription_times) / len(self.transcription_times)
-                duration = len(audio_data) / self.sample_rate
-                print(f"🎯 Enhanced transcription ({duration:.1f}s): '{text[:50]}{'...' if len(text) > 50 else ''}'")
+                print(f"🎯 Enhanced transcription ({audio_duration:.1f}s): '{text[:50]}{'...' if len(text) > 50 else ''}'")
                 print(f"⏱️  Enhanced timing: {transcription_time:.2f}s | Avg: {avg_time:.2f}s")
             else:
-                print(f"🔇 Empty enhanced transcription for {len(audio_data)/self.sample_rate:.1f}s audio")
+                print(f"🔇 Empty enhanced transcription for {audio_duration:.1f}s audio")
             
             return text
             

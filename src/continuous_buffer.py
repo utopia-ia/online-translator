@@ -7,7 +7,7 @@ Continuous Buffer Module
 Manages continuous audio buffer processing for real-time transcription.
 Handles audio data streaming and buffering for optimal performance.
 
-Copyright (c) 2024 Kiko Cisneros
+Copyright (c) 2025 Kiko Cisneros
 Licensed under the MIT License (see LICENSE file for details)
 """
 
@@ -25,11 +25,15 @@ class ContinuousBuffer:
         self.lock = threading.Lock()
         
         # Transcription overlap management
-        self.overlap_duration = 0.4  # 1 second overlap
+        self.overlap_duration = 0.4  # ✅ RELAXED: Balanced overlap
         self.overlap_samples = int(self.overlap_duration * sample_rate)
         self.last_transcribed_position = 0
         
-        print(f"📊 Continuous buffer initialized: {max_duration}s max, {self.overlap_duration}s overlap")
+        # Word boundary context
+        self.word_boundary_context = 0.15  # ✅ RELAXED: Less context needed
+        self.word_boundary_samples = int(self.word_boundary_context * sample_rate)
+        
+        print(f"📊 Continuous buffer initialized: {max_duration}s max, {self.overlap_duration}s overlap, {self.word_boundary_context}s word boundary context")
         
     def add_audio(self, audio_chunk):
         """Add new audio to the continuous buffer"""

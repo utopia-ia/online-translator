@@ -7,7 +7,7 @@ UI Components Module
 User interface components and widgets for the Online-Translator application.
 Includes floating subtitle window, controls, and settings interface.
 
-Copyright (c) 2024 Kiko Cisneros
+Copyright (c) 2025 Kiko Cisneros
 Licensed under the MIT License (see LICENSE file for details)
 """
 

@@ -6,7 +6,7 @@ This script creates a macOS application bundle for the Online-Translator project
 It handles the creation of the .app structure, installation of dependencies,
 and setup of MLX models.
 
-Copyright (c) 2024 Kiko Cisneros
+Copyright (c) 2025 Kiko Cisneros
 Licensed under the MIT License (see LICENSE file for details)
 """
 

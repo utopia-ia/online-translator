@@ -7,7 +7,7 @@ Translation Module
 Handles text translation functionality for the Online-Translator application.
 Provides translation services using MLX models and manages translation context.
 
-Copyright (c) 2024 Kiko Cisneros
+Copyright (c) 2025 Kiko Cisneros
 Licensed under the MIT License (see LICENSE file for details)
 """
 

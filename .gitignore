@@ -35,6 +35,7 @@ env/
 
 # Project specific
 transcriptions_history/
+transcription_history/
 *.log
 *.bak
 

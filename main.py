@@ -7,7 +7,7 @@ Online-Translator Main Application
 The main application file for Online-Translator, handling the core functionality
 of audio transcription and translation with MLX models.
 
-Copyright (c) 2024 Kiko Cisneros
+Copyright (c) 2025 Kiko Cisneros
 Licensed under the MIT License (see LICENSE file for details)
 """
 
