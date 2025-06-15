@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Online-Translator](media/logoCovi.png)
+<img src="media/logoCovi.png" alt="Online-Translator" width="80" />
 
 **Real-time Audio Transcription and Translation with Floating Subtitles**
 
@@ -15,7 +15,9 @@
 
 ## 📺 Demo
 
-![App Icon](media/logoCovi.png)
+<video src="media/demo.MP4" width="100%" controls>
+  Your browser does not support the video tag.
+</video>
 
 ## 🌟 About This Project
 
