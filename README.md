@@ -15,9 +15,7 @@
 
 ## 📺 Demo
 
-<video src="media/demo.MP4" width="100%" controls>
-  Your browser does not support the video tag.
-</video>
+[▶️ Watch the demo video](https://github.com/utopia-ia/online-translator/blob/main/media/demo.MP4)
 
 ## 🌟 About This Project
 
